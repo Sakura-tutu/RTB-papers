@@ -14,6 +14,7 @@ A curated collection of research papers on Real-Time Bidding from top conference
 - [AAAI / IJCAI / SIGIR / CIKM](#aaai--ijcai--sigir--cikm)
 - [arXiv & Others](#arxiv--others)
 - [Multi-Agent RTB 出价优化](#multi-agent-rtb-出价优化)
+- [Multi-Agent RTB 研究现状分析](#multi-agent-rtb-研究现状分析)
 
 ---
 
@@ -102,3 +103,177 @@ A curated collection of research papers on Real-Time Bidding from top conference
 ## 🤝 Contributing
 
 Found a relevant RTB paper? Please contribute by submitting a Pull Request!
+
+---
+
+# Multi-Agent RTB 出价优化研究现状
+
+## 一、为什么需要 Multi-Agent？
+
+传统 RTB 出价优化研究存在一个关键假设缺陷：**假设其他竞标者是静态环境，而非对等的、会学习与适应的对手**。这导致：
+
+| 问题 | 说明 |
+| :--- | :--- |
+| 固定胜出价格假设 | 传统方法假设胜出价格不变，忽略竞标者之间的相互影响 |
+| 竞争被忽视 | 单智能体优化无法建模多广告主之间的博弈 |
+| 合谋风险 | 多个独立优化可能导致集体报低价损害平台收益 |
+
+Multi-Agent 方法正是为了解决这些问题而兴起。
+
+---
+
+## 二、Multi-Agent RTB 出价优化研究演进
+
+### 2.1 奠基阶段：多智能体强化学习的初步探索（2018）
+
+**代表性工作**：**DCMAB (Distributed Coordinated Multi-Agent Bidding)**
+
+由伦敦大学学院、阿里巴巴等机构发表于 **CIKM 2018**，这是最早系统性地将多智能体强化学习引入 RTB 的研究。
+
+**核心贡献**：
+- 将竞价优化建模为**多智能体博弈问题**，广告主之间既存在竞争也存在合作
+- 针对大规模广告主（数万级别），提出**聚类方法**：将相似广告主聚类，每个聚类分配一个战略智能体
+- 设计 **DCMAB** 框架，平衡竞争与合作的权衡
+- 在**工业级真实数据**上验证，聚类竞价显著优于单智能体和 Bandit 方法
+
+**局限性**：
+- 仍假设智能体之间可以通过中心化协调，未考虑真实分布式环境
+- 未能完全解决合谋问题
+
+### 2.2 问题深化：防合谋与多目标优化（2023）
+
+**代表性工作**：**MACG (Multi-Agent Cooperative bidding Games)**
+
+针对 RTB 出价优化的两个核心难题：
+- **合谋风险**：多个广告主智能体若独立优化，可能合谋报低价损害平台收益
+- **多目标复杂性**：广告主同时追求 ROI、CTR、转化等多重目标
+
+**MACG 的解决方案**：
+- **多目标优化框架**：将不同广告主目标纳入统一框架
+- **平台收入约束**：引入额外约束，强制保证平台收入不低于阈值，防止合谋
+- **理论分析**：推导最优出价函数的解析形式
+- **政策网络设计**：生成拍卖级出价
+
+**实验验证**：在**淘宝平台**进行离线实验和在线 A/B 测试，单广告主目标和全局利润均显著提升。
+
+### 2.3 体系结构创新：分层多智能体（2024）
+
+**代表性工作**：**Hierarchical Multi-agent Meta-Reinforcement Learning for Cross-channel Bidding**
+
+由美团团队发表于 **arXiv 2024**，解决跨渠道预算分配这一新问题。
+
+**核心问题**：广告主在多个渠道（搜索、展示、视频等）共享一个预算池，传统方法无法动态分配。
+
+**提出的分层架构**：
+
+| 层级 | 功能 | 技术 |
+| :--- | :--- | :--- |
+| **顶层** | 跨渠道预算动态分配 | CPC 约束扩散模型 |
+| **底层** | 单渠道出价策略 | 状态-动作解耦 Actor-Critic |
+
+**关键技术点**：
+- 利用不同渠道的特征和复杂依赖关系
+- 上下文感知的元通道知识学习
+- 解决离线学习中 OOD 动作导致的推断误差
+
+**实验验证**：在**美团广告平台**真实工业数据集上达到 SOTA 性能。
+
+### 2.4 基础设施突破：Agentic RTB Framework (ARTF)（2025）
+
+这是 Multi-Agent RTB **从学术走向工业应用的关键转折**。
+
+**ARTF v1.0** 由 IAB Tech Lab 于 2025 年 11 月发布，联合了 Index Exchange、Amazon Ads、Yahoo DSP、Netflix、WPP 等 20+ 家企业。
+
+**核心创新**：
+
+| 创新点 | 说明 |
+| :--- | :--- |
+| **容器化架构** | 将智能体代码打包为容器，部署在 DSP/SSP 的同一数据中心 |
+| **延迟大幅降低** | 从 400-600ms 降至毫秒级，为实时决策留出时间 |
+| **双向通信协议** | 采用 gRPC 替代传统 HTTP，支持智能体间持续交互 |
+| **安全容器** | 加密签名防止篡改，数据不离开容器 |
+
+**对出价优化的意义**：
+- 广告主可将自己的出价模型**直接部署在拍卖环境**，而非通过受限的 DSP API
+- 实时欺诈检测、数据增强可在竞价前完成
+- 多智能体可以在同一环境内高速交互，实现真正的协同
+
+> “这是广告主第一次能够完全按照自己的规则出价，不再受限于平台基础设施” —— Chalice CEO Adam Heimlich
+
+---
+
+## 三、核心技术挑战与解决方案
+
+### 3.1 合谋问题
+
+| 挑战 | 解决方案 | 代表工作 |
+| :--- | :--- | :--- |
+| 多个智能体可能合谋报低价 | 引入平台收入约束 | MACG |
+| 协调后偏离全局最优 | 全局利润最大化目标 | MACG |
+
+### 3.2 异构智能体共存
+
+RTB 环境是**异构智能体共存**的典型场景：
+
+| 智能体类型 | 行为特征 | 代表 |
+| :--- | :--- | :--- |
+| LLM 智能体 | 可解释、能推理 | RTBAgent |
+| RL 智能体 | 稳定优化、黑盒 | DRLB、USCB |
+| 规则智能体 | 简单僵化 | 固定出价 |
+
+**研究空白**：如何让异构智能体共存、交互并收敛到稳定市场状态，目前尚无系统解决方案。
+
+### 3.3 对手建模
+
+传统方法假设对手静态，Multi-Agent 需要对对手行为建模。已有研究提出：
+- **Mean Field 方法**：基于对手出价分布的近似
+- **聚类方法**：将同类广告主视为一个智能体
+
+**新兴方向**：利用 LLM 的思维链可解释性，逆向推断对手策略。
+
+---
+
+## 四、前沿进展与未来方向
+
+### 4.1 最新趋势总结
+
+| 趋势 | 说明 | 代表 |
+| :--- | :--- | :--- |
+| 从单智能体到多智能体 | 承认市场竞争的博弈本质 | DCMAB, MACG |
+| 从同构到异构 | LLM 智能体 vs RL 智能体共存 | RTBAgent + MACG |
+| 从算法到基础设施 | 行业标准支撑多智能体部署 | ARTF v1.0 |
+| 从单渠道到跨渠道 | 多层级多智能体协调 | Hierarchical MARL |
+
+### 4.2 对 RTBAgent Multi-Agent 课题的定位建议
+
+基于上述分析，你的研究可以定位为：
+
+> **“面向异构智能体的 RTB 出价优化协同机制研究”**
+
+**可切入的研究问题**：
+
+| 研究方向 | 具体问题 | 创新点 |
+| :--- | :--- | :--- |
+| **异构智能体协调** | LLM 智能体与 RL 智能体如何协同出价？ | 结合 RTBAgent 的可解释性与 RL 的稳定性 |
+| **防合谋机制** | 多 LLM 智能体是否会通过语义交流形成默契合谋？ | 设计检测与干预机制 |
+| **对手建模** | 如何预测其他 LLM 智能体的出价策略？ | 利用思维链逆向推理 |
+| **可验证安全** | 如何审计多智能体决策过程？ | 结合 ARTF 的容器签名机制 |
+
+### 4.3 可用的资源与基线
+
+| 类型 | 资源 | 说明 |
+| :--- | :--- | :--- |
+| **核心论文** | RTBAgent (WWW 2025) | 单智能体 LLM 基线 |
+| **RL 基线** | DCMAB (CIKM 2018)、MACG、DRLB | 多智能体 RL 对比 |
+| **工业框架** | ARTF v1.0 | 多智能体部署基础设施 |
+| **数据集** | iPinYou、美团工业数据 | 真实竞价日志 |
+
+---
+
+## 参考文献
+
+1. Cai, L., He, J., Li, Y., et al. (2025). RTBAgent: A LLM-based Agent System for Real-Time Bidding. *The Web Conference 2025*.
+2. Distributed Coordinated Multi-Agent Bidding. *CIKM 2018*.
+3. Multi-Agent Cooperative Bidding Games (MACG). *AITopics / arXiv*.
+4. Hierarchical Multi-agent Meta-Reinforcement Learning for Cross-channel Bidding. *arXiv 2024*.
+5. Agentic RTB Framework (ARTF) v1.0. IAB Tech Lab, 2025.
